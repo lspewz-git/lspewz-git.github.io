@@ -15,7 +15,7 @@ const SEND_BUTTON = document.getElementById('send-btn');
 
 SEND_BUTTON.addEventListener('click', async () => {
     // ВАЖНО: Замени эту ссылку на ту, которую выдал тебе localtunnel!
-    const LOCAL_TUNNEL_URL = 'https://your-unique-id.loca.lt'; 
+    const LOCAL_TUNNEL_URL = 'https://calm-books-attack.loca.lt'; 
 
     const dataToSend = {
         queryId: tg.initDataUnsafe.query_id,
