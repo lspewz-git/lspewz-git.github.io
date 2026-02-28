@@ -1,25 +1,82 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Telegram WebApp</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            --bg-color: var(--tg-theme-bg-color, #fff);
+            --text-color: var(--tg-theme-text-color, #000);
+            --button-color: var(--tg-theme-button-color, #3390ec);
+            --button-text: var(--tg-theme-button-text-color, #fff);
+            --hint-color: var(--tg-theme-hint-color, #999);
+
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            text-align: center;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        h1 { font-size: 24px; margin-bottom: 10px; }
+        p { color: var(--hint-color); margin-bottom: 30px; }
+
+        .user-card {
+            background: var(--tg-theme-secondary-bg-color, #f4f4f5);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .main-button {
+            background-color: var(--button-color);
+            color: var(--button-text);
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            transition: opacity 0.2s ease;
+        }
+
+        .main-button:active { opacity: 0.7; }
+        
+        #status {
+            margin-top: 15px;
+            font-size: 12px;
+            color: var(--button-color);
+        }
+    </style>
 </head>
 <body>
-    <div class="tabs">
-        <button onclick="showTab('add')">Добавить</button>
-        <button onclick="showTab('list')">Список</button>
-    </div>
 
-    <div id="add-tab" class="tab-content">
-        <input type="text" id="name" placeholder="Имя друга">
-        <input type="date" id="date">
-        <button onclick="saveFriend()">Сохранить</button>
-    </div>
+    <div class="container">
+        <h1 id="user-name">Привет!</h1>
+        <p>Добро пожаловать в WebApp</p>
 
-    <div id="list-tab" class="tab-content" style="display:none;">
-        <div id="friends-list">Загрузка...</div>
+        <div class="user-card">
+            ID пользователя: <span id="user-id">...</span>
+        </div>
+
+        <button class="main-button" id="send-btn">Отправить данные на ПК</button>
+        <div id="status"></div>
     </div>
 
     <script src="script.js"></script>
