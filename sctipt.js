@@ -1,41 +1,48 @@
 const tg = window.Telegram.WebApp;
-const API_URL = 'https://ВАШ_АДРЕС_ИЗ_NGROK.ngrok-free.app/api';
+const statusEl = document.getElementById('status');
 
-function showTab(tab) {
-    document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
-    document.getElementById(tab + '-tab').style.display = 'block';
-    if(tab === 'list') loadFriends();
+// Сообщаем Telegram, что приложение готово
+tg.ready();
+tg.expand(); // Разворачиваем на все окно
+
+// Устанавливаем данные пользователя из Telegram
+if (tg.initDataUnsafe?.user) {
+    document.getElementById('user-name').innerText = `Привет, ${tg.initDataUnsafe.user.first_name}!`;
+    document.getElementById('user-id').innerText = tg.initDataUnsafe.user.id;
 }
 
-async function saveFriend() {
-    const name = document.getElementById('name').value;
-    const date = document.getElementById('date').value;
-    
-    await fetch(`${API_URL}/friends`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, date, _auth: tg.initData })
-    });
-    tg.showAlert("Сохранено!");
-}
+const SEND_BUTTON = document.getElementById('send-btn');
 
-async function loadFriends() {
-    const res = await fetch(`${API_URL}/friends?_auth=${encodeURIComponent(tg.initData)}`);
-    const friends = await res.json();
-    const container = document.getElementById('friends-list');
-    container.innerHTML = friends.map(f => `
-        <div class="card">
-            <span>${f.name} (${f.date})</span>
-            <button onclick="deleteFriend('${f._id}')">❌</button>
-        </div>
-    `).join('');
-}
+SEND_BUTTON.addEventListener('click', async () => {
+    // ВАЖНО: Замени эту ссылку на ту, которую выдал тебе localtunnel!
+    const LOCAL_TUNNEL_URL = 'https://your-unique-id.loca.lt'; 
 
-async function deleteFriend(id) {
-    await fetch(`${API_URL}/friends/${id}`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ _auth: tg.initData })
-    });
-    loadFriends();
-}
+    const dataToSend = {
+        queryId: tg.initDataUnsafe.query_id,
+        user_id: tg.initDataUnsafe.user?.id,
+        message: "Кнопка нажата в WebApp!"
+    };
+
+    statusEl.innerText = "Отправка на твой ПК...";
+
+    try {
+        const response = await fetch(`${LOCAL_TUNNEL_URL}/api/data`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(dataToSend)
+        });
+
+        if (response.ok) {
+            statusEl.innerText = "Успешно! Проверь чат с ботом.";
+            // Закрыть WebApp через секунду после успеха
+            setTimeout(() => tg.close(), 1500);
+        } else {
+            statusEl.innerText = "Ошибка сервера: " + response.status;
+        }
+    } catch (error) {
+        statusEl.innerText = "Ошибка: проверь запущен ли localtunnel";
+        console.error(error);
+    }
+});
