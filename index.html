@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Кино-Помощник</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --accent-color: #38bdf8;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        h1 {
+            font-size: 24px;
+            text-align: center;
+            background: linear-gradient(90deg, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .search-container {
+            display: flex;
+            gap: 8px;
+        }
+
+        input {
+            flex-grow: 1;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid #334155;
+            background: #1e293b;
+            color: white;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input:focus {
+            border-color: var(--accent-color);
+        }
+
+        button.search-btn {
+            background: var(--accent-color);
+            border: none;
+            padding: 12px 20px;
+            border-radius: 12px;
+            color: #0f172a;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .results {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .movie-card {
+            background: var(--card-bg);
+            padding: 16px;
+            border-radius: 16px;
+            display: flex;
+            gap: 16px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            transition: transform 0.2s;
+        }
+
+        .movie-card:active {
+            transform: scale(0.98);
+        }
+
+        .movie-poster {
+            width: 80px;
+            height: 120px;
+            background: #334155;
+            border-radius: 8px;
+            object-fit: cover;
+        }
+
+        .movie-info {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .movie-title {
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .movie-year {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .subscribe-btn {
+            background: transparent;
+            border: 1px solid var(--accent-color);
+            color: var(--accent-color);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            align-self: flex-start;
+            margin-top: 8px;
+            cursor: pointer;
+        }
+
+        .loading {
+            text-align: center;
+            color: var(--text-secondary);
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎬 Кино-Помощник</h1>
+
+    <div class="search-container">
+        <input type="text" id="searchInput" placeholder="Поиск сериалов...">
+        <button class="search-btn" onclick="searchMovies()">Найти</button>
+    </div>
+
+    <div id="loading" class="loading">Загрузка...</div>
+    <div id="results" class="results"></div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        tg.ready();
+
+        const API_URL = '/api';
+
+        async function searchMovies() {
+            const query = document.getElementById('searchInput').value;
+            if (!query) return;
+
+            const resultsDiv = document.getElementById('results');
+            const loading = document.getElementById('loading');
+            
+            resultsDiv.innerHTML = '';
+            loading.style.display = 'block';
+
+            try {
+                const response = await fetch(`${API_URL}/search?query=${encodeURIComponent(query)}`, {
+                    headers: {
+                        'X-Telegram-Init-Data': tg.initData
+                    }
+                });
+                const data = await response.json();
+                loading.style.display = 'none';
+
+                if (data.docs) {
+                    data.docs.forEach(movie => {
+                        const card = document.createElement('div');
+                        card.className = 'movie-card';
+                        card.innerHTML = `
+                            <img src="${movie.poster?.url || ''}" class="movie-poster" alt="poster">
+                            <div class="movie-info">
+                                <div>
+                                    <div class="movie-title">${movie.name || movie.alternativeName}</div>
+                                    <div class="movie-year">${movie.year} | ${movie.type}</div>
+                                </div>
+                                <button class="subscribe-btn" onclick="subscribe(${movie.id}, '${movie.name || movie.alternativeName}')">
+                                    Подписаться
+                                </button>
+                            </div>
+                        `;
+                        resultsDiv.appendChild(card);
+                    });
+                }
+            } catch (error) {
+                console.error(error);
+                loading.style.display = 'none';
+                resultsDiv.innerHTML = '<p style="color:red">Ошибка поиска</p>';
+            }
+        }
+
+        function subscribe(itemId, title) {
+            tg.showPopup({
+                title: 'Подписка',
+                message: `Настройте уведомления для "${title}"`,
+                buttons: [
+                    { id: 'each', type: 'default', text: 'Каждая серия' },
+                    { id: 'full', type: 'default', text: 'Весь сезон' },
+                    { type: 'cancel' }
+                ]
+            }, async (buttonId) => {
+                if (buttonId === 'each' || buttonId === 'full') {
+                    const type = buttonId === 'each' ? 'each_episode' : 'full_season';
+                    
+                    try {
+                        const response = await fetch(`${API_URL}/subscribe`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-Telegram-Init-Data': tg.initData
+                            },
+                            body: JSON.stringify({
+                                telegram_id: tg.initDataUnsafe.user.id,
+                                item_id: itemId,
+                                title: title,
+                                type: type
+                            })
+                        });
+
+                        const res = await response.json();
+                        if (res.success) {
+                            tg.showAlert(`Вы подписались на "${title}"!`);
+                        }
+                    } catch (e) {
+                         tg.showAlert(`Ошибка при подписке`);
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
